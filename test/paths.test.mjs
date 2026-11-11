@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyChanges, loadPathRules } from '../.github/release/classify-paths.mjs';
+import { classifyChanges, loadPathRules, parseNameStatus } from '../.github/release/classify-paths.mjs';
 
 const rules = loadPathRules();
 const bases = { backend: 'a', web: 'a', image: 'a' };
@@ -34,6 +34,14 @@ test('missing base, rename, and delete fail safe', () => {
     backend: true, web: true, image: true,
   });
   assert.deepEqual(classifyChanges({ files: [{ path: 'services/web/new', previous_path: 'services/backend/old' }], bases, rules }), {
+    backend: true, web: true, image: true,
+  });
+});
+
+test('parses git name-status output and fails safe on rename', () => {
+  const files = parseNameStatus('M\tservices/backend/src/main.ts\nR100\tservices/backend/old.ts\tservices/web/new.ts\nD\tservices/web/deploy.yml\n');
+  assert.equal(files.length, 3);
+  assert.deepEqual(classifyChanges({ files, bases, rules }), {
     backend: true, web: true, image: true,
   });
 });

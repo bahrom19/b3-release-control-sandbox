@@ -49,3 +49,20 @@ export function classifyChanges({ files, bases, rules }) {
 
   return Object.fromEntries(SERVICES.map((s) => [s, changed.has(s)]));
 }
+
+export function parseNameStatus(text) {
+  const files = [];
+  for (const line of text.split('\n')) {
+    if (!line.trim()) continue;
+    const parts = line.split('\t');
+    const status = parts[0];
+    if (status.startsWith('R') || status.startsWith('C')) {
+      files.push({ status: 'renamed', previous_path: parts[1], path: parts[2] });
+    } else if (status === 'D') {
+      files.push({ status: 'deleted', path: parts[1] });
+    } else {
+      files.push({ status: 'modified', path: parts[1] });
+    }
+  }
+  return files;
+}
