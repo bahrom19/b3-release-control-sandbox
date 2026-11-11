@@ -1,0 +1,86 @@
+name: Release Gate
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-gate
+  cancel-in-progress: false
+
+jobs:
+  precheck:
+    if: vars.ENABLE_RELEASE_GATE == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.check.outputs.sha }}
+      backend: ${{ steps.check.outputs.backend }}
+      web: ${{ steps.check.outputs.web }}
+      image: ${{ steps.check.outputs.image }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - id: check
+        run: node sandbox/gate-precheck.mjs
+        env:
+          CI_WORKFLOW_ID: ${{ vars.CI_WORKFLOW_ID }}
+          CI_WORKFLOW_PATH: .github/workflows/ci.yml
+          CI_WORKFLOW_NAME: CI
+
+  approval:
+    needs: precheck
+    if: vars.ENABLE_RELEASE_GATE == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: sandbox-approval
+    steps:
+      - run: node -e "console.log('sandbox approval gate reached')"
+
+  postcheck:
+    needs: [precheck, approval]
+    if: vars.ENABLE_RELEASE_GATE == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - run: node sandbox/gate-postcheck.mjs
+        env:
+          RELEASE_SHA: ${{ needs.precheck.outputs.sha }}
+
+  backend-adapter:
+    needs: [precheck, postcheck]
+    if: vars.ENABLE_RELEASE_GATE == 'true' && needs.precheck.outputs.backend == 'true'
+    uses: ./.github/workflows/backend-adapter.yml
+    with:
+      sha: ${{ needs.precheck.outputs.sha }}
+
+  web-adapter:
+    needs: [precheck, postcheck]
+    if: vars.ENABLE_RELEASE_GATE == 'true' && needs.precheck.outputs.web == 'true'
+    uses: ./.github/workflows/web-adapter.yml
+    with:
+      sha: ${{ needs.precheck.outputs.sha }}
+
+  image-adapter:
+    needs: [precheck, postcheck]
+    if: vars.ENABLE_RELEASE_GATE == 'true' && needs.precheck.outputs.image == 'true'
+    uses: ./.github/workflows/cd.yml
+    with:
+      sha: ${{ needs.precheck.outputs.sha }}
+
+  finalize:
+    needs: [precheck, approval, postcheck, backend-adapter, web-adapter, image-adapter]
+    if: always() && vars.ENABLE_RELEASE_GATE == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: node -e "console.log('simulated release finalized')"

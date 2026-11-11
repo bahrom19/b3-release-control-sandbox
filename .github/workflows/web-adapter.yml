@@ -1,0 +1,21 @@
+name: Web Adapter
+
+on:
+  workflow_call:
+    inputs:
+      sha:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          persist-credentials: false
+      - run: node sandbox/dummy-deploy.mjs --service web --sha "${{ inputs.sha }}" --outcome success --out sandbox/out/web.json

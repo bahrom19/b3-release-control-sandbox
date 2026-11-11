@@ -1,0 +1,13 @@
+{
+  "valid": {
+    "repository": { "full_name": "example-owner/example-repo" },
+    "head_repository": { "full_name": "example-owner/example-repo" },
+    "workflow_id": 123456,
+    "path": ".github/workflows/ci.yml",
+    "name": "CI",
+    "event": "push",
+    "head_branch": "main",
+    "conclusion": "success",
+    "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  }
+}

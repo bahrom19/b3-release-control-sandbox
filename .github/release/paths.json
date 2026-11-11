@@ -1,0 +1,6 @@
+{
+  "backend": ["services/backend/"],
+  "web": ["services/web/", "services/web-deploy/"],
+  "image": ["services/backend/src/", "services/backend/Dockerfile", "docker/"],
+  "shared": ["shared/"]
+}

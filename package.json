@@ -1,0 +1,10 @@
+{
+  "name": "b3-release-control-sandbox",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "verify": "node sandbox/verify-isolation.mjs"
+  }
+}
